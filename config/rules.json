@@ -1,0 +1,18 @@
+[
+    {
+        "description": "Unread flipkart 30% Early Bird Deals",
+        "predicate": "any",
+        "conditions": [
+          { "field": "From", "operator": "equals", "value": "googleplay-noreply@google.com" },
+          { "field": "Subject", "operator": "contains", "value": "changes to your play games" },
+          { "field": "DateReceived", "operator": "less_than_days", "value": 25 }
+        ],
+        "actions": [
+          { "type": "mark_as_read" },
+          { "type": "move", "destination": "IMPORTANT" }
+        ]
+    }
+   
+  ]
+  
+  

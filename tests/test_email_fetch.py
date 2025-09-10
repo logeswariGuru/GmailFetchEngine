@@ -1,85 +1,73 @@
+import os
 import unittest
+from datetime import datetime, timezone
 
 # Ensure project root is on sys.path
-import os, sys
+import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from gmail_client.email_fetch import fetch_inbox_messages
+from gmail_client.email_fetch import (
+    parse_headers,
+    extract_received_at,
+    process_message_response,
+)
 
-class MockListRequest:
-    def execute(self):
-        # Simulate Gmail list response with two messages
-        return {"messages": [{"id": "1"}, {"id": "2"}]}
 
-class MockGetRequest1:
-    def execute(self):
-        return {
-            "snippet": "First message snippet",
+class TestEmailFetch(unittest.TestCase):
+    def test_parse_headers_normal(self):
+        headers = [
+            {"name": "From", "value": "alice@example.com"},
+            {"name": "Subject", "value": "Hello"},
+            {"name": "Date", "value": "Mon, 01 Jan 2024 10:00:00 +0000"},
+        ]
+        result = parse_headers(headers)
+
+        self.assertEqual(result["from"], "alice@example.com")
+        self.assertEqual(result["subject"], "Hello")
+        self.assertEqual(result["date"], "Mon, 01 Jan 2024 10:00:00 +0000")
+
+    def test_parse_headers_empty(self):
+        result = parse_headers([])
+        self.assertEqual(result, {})
+
+    def test_extract_received_at_from_date(self):
+        date_str = "Mon, 01 Jan 2024 10:00:00 +0000"
+        result = extract_received_at(date_str, {})
+        self.assertTrue(result.startswith("2024-01-01T10:00:00"))
+
+    def test_extract_received_at_invalid(self):
+        result = extract_received_at("invalid-date", {"internalDate": "not-a-number"})
+        self.assertIsNone(result)
+
+    def test_process_message_response_success(self):
+        emails = []
+        response = {
+            "id": "123",
+            "snippet": "Hello World",
+            "internalDate": "1700000000000",
             "labelIds": ["INBOX", "UNREAD"],
             "payload": {
                 "headers": [
-                    {"name": "From", "value": "sender1@example.com"},
-                    {"name": "Subject", "value": "Subject 1"},
-                    {"name": "Date", "value": "Mon, 08 Sep 2025 10:15:00 +0000"},
+                    {"name": "From", "value": "bob@example.com"},
+                    {"name": "Subject", "value": "Hi"},
+                    {"name": "Date", "value": "Mon, 01 Jan 2024 10:00:00 +0000"},
                 ]
-            }
+            },
         }
+        process_message_response(emails, "123", response, None)
 
-class MockGetRequest2:
-    def execute(self):
-        return {
-            "snippet": "Second message snippet",
-            "labelIds": ["INBOX"],
-            "payload": {
-                "headers": [
-                    {"name": "From", "value": "sender2@example.com"},
-                    {"name": "Subject", "value": "Subject 2"},
-                    {"name": "Date", "value": "Mon, 08 Sep 2025 11:20:00 +0000"},
-                ]
-            }
-        }
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0]["from"], "bob@example.com")
+        self.assertEqual(emails[0]["subject"], "Hi")
+        self.assertEqual(emails[0]["is_read"], 0)  # unread
 
-class MockMessages:
-    def list(self, userId, labelIds, maxResults):
-        return MockListRequest()
-    def get(self, userId, id, format):
-        return MockGetRequest1() if id == "1" else MockGetRequest2()
+    def test_process_message_response_with_exception(self):
+        emails = []
+        process_message_response(emails, "123", {}, Exception("Test error"))
+        self.assertEqual(emails, [])
 
-class MockUsers:
-    def messages(self):
-        return MockMessages()
-
-class MockService:
-    def users(self):
-        return MockUsers()
-
-class TestEmailFetch(unittest.TestCase):
-    def test_fetch_inbox_messages_parses_fields(self):
-        service = MockService()
-        emails = fetch_inbox_messages(service, max_results=2)
-
-        # We expect two results
-        self.assertEqual(len(emails), 2)
-
-        # Validate first message
-        e1 = emails[0]
-        self.assertEqual(e1["id"], "1")
-        self.assertEqual(e1["from"], "sender1@example.com")
-        self.assertEqual(e1["subject"], "Subject 1")
-        self.assertEqual(e1["snippet"], "First message snippet")
-        self.assertEqual(e1["is_read"], 0)  # because UNREAD label present
-        self.assertIn("INBOX", e1["labels"])
-
-        # Validate second message
-        e2 = emails[1]
-        self.assertEqual(e2["id"], "2")
-        self.assertEqual(e2["from"], "sender2@example.com")
-        self.assertEqual(e2["subject"], "Subject 2")
-        self.assertEqual(e2["snippet"], "Second message snippet")
-        self.assertEqual(e2["is_read"], 1)  # no UNREAD label
-        self.assertIn("INBOX", e2["labels"])
 
 if __name__ == "__main__":
     unittest.main()
