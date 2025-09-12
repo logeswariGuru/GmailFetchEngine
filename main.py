@@ -5,9 +5,8 @@ import argparse
 from gmail_client.auth import authenticate
 from gmail_client.gmail_service import build_service
 from gmail_client.email_fetch import fetch_all_emails_from_gmail, fetch_inbox_messages
-from gmail_client.email_repository import init_db, save_emails, fetch_all_emails
+from gmail_client.email_repository import init_db, save_emails
 from gmail_client.rule_processor.rule_engine import process_rules
-
 
 def fetch_emails(service, fetch_all: bool = True, batch_size: int = 50):
     """
@@ -50,11 +49,11 @@ def main(fetch_all: bool = True, batch_size: int = 50):
         else:
             logging.info("No emails retrieved from Gmail.")
 
-        # 5. Fetch from DB to verify persistence (optional)
-        stored_emails = fetch_all_emails()
+        # # 5. Fetch from DB to verify persistence (optional)
+        # stored_emails = fetch_all_emails()
 
         # 6. Process rules on stored emails
-        process_rules(service, stored_emails)
+        process_rules(service)
 
     except Exception as e:
         logging.error(f"Application error: {e}")

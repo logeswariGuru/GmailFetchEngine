@@ -21,28 +21,35 @@ def modify_message(service, email_id, add_labels=None, remove_labels=None):
 
 def apply_actions(service, email, actions):
     """Apply Gmail actions (mark read/unread, move)."""
+    logger.info(f"apply_actions → {email.get('id')}")
+
     email_id = email.get("id")
-    logger.info("apply_actions-----> %s", email_id)
+    is_read = email.get("is_read", 0)      # default to unread (0)
+    labels = email.get("labels", [])        # default to empty list
 
     for action in actions:
         try:
             atype = action.get("type")
 
             if atype == "mark_as_read":
-                modify_message(service, email_id, remove_labels=["UNREAD"])
-                logger.info("📩 Marked email %s as read", email_id)
+                # Always attempt to remove the UNREAD label in Gmail.
+                modify_message(service, email_id, remove_labels=["UNREAD"]) 
+                logger.info("📩 Marked email %s as read (requested)", email_id)
 
             elif atype == "mark_as_unread":
-                modify_message(service, email_id, add_labels=["UNREAD"])
-                logger.info("📩 Marked email %s as unread", email_id)
+                # Always attempt to add the UNREAD label in Gmail.
+                modify_message(service, email_id, add_labels=["UNREAD"]) 
+                logger.info("📩 Marked email %s as unread (requested)", email_id)
 
             elif atype == "move":
                 destination = action.get("destination")
                 if not destination:
                     logger.warning("⚠️ No destination provided for move action.")
                     continue
+
+                # Always attempt to add the destination label and remove INBOX.
                 modify_message(service, email_id, add_labels=[destination], remove_labels=["INBOX"])
-                logger.info("📂 Moved email %s to %s", email_id, destination)
+                logger.info("📂 Moved email %s to %s (requested)", email_id, destination)
 
             else:
                 logger.warning("⚠️ Unsupported action type: %s", atype)

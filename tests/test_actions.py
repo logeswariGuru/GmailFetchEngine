@@ -66,6 +66,15 @@ class TestActions(unittest.TestCase):
         # Should just warn and not throw
         apply_actions(self.service, self.email, [{"type": "unknown"}])
 
+    def test_mark_as_unread_when_read(self):
+        # If DB says the email is read (is_read=1), applying mark_as_unread should
+        # still call the Gmail modify API to add the UNREAD label.
+        email = {"id": "456", "is_read": 1, "labels": []}
+        apply_actions(self.service, email, [{"type": "mark_as_unread"}])
+        body = self.service.users().messages().last_call["body"]
+        self.assertIn("addLabelIds", body)
+        self.assertIn("UNREAD", body["addLabelIds"])
+
 
 if __name__ == "__main__":
     unittest.main()

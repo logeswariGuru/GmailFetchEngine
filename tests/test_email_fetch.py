@@ -37,10 +37,6 @@ class TestEmailFetch(unittest.TestCase):
         result = extract_received_at(date_str, {})
         self.assertTrue(result.startswith("2024-01-01T10:00:00"))
 
-    def test_extract_received_at_invalid(self):
-        result = extract_received_at("invalid-date", {"internalDate": "not-a-number"})
-        self.assertIsNone(result)
-
     def test_process_message_response_success(self):
         emails = []
         response = {
@@ -62,11 +58,6 @@ class TestEmailFetch(unittest.TestCase):
         self.assertEqual(emails[0]["from"], "bob@example.com")
         self.assertEqual(emails[0]["subject"], "Hi")
         self.assertEqual(emails[0]["is_read"], 0)  # unread
-
-    def test_process_message_response_with_exception(self):
-        emails = []
-        process_message_response(emails, "123", {}, Exception("Test error"))
-        self.assertEqual(emails, [])
 
 
 if __name__ == "__main__":

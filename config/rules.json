@@ -1,18 +1,71 @@
 [
+  
     {
         "description": "Unread flipkart 30% Early Bird Deals",
         "predicate": "any",
         "conditions": [
-          { "field": "From", "operator": "equals", "value": "googleplay-noreply@google.com" },
-          { "field": "Subject", "operator": "contains", "value": "changes to your play games" },
-          { "field": "DateReceived", "operator": "less_than_days", "value": 25 }
+          { "field": "From", "operator": "equals", "value": "no-reply@rmp.flipkart.com" },
+          { "field": "Subject", "operator": "contains", "value": "Min. 30% Off on Early Bird Deals" },
+          { "field": "DateReceived", "operator": "less_than_days", "value": 2 }
         ],
         "actions": [
           { "type": "mark_as_read" },
           { "type": "move", "destination": "IMPORTANT" }
         ]
+    },
+
+  {  
+        "description": "Unread flipkart 50% Early Bird Deals",
+        "predicate": "all",
+        "conditions": [
+          { "field": "From", "operator": "contains", "value": "Flipkart.com" },
+          { "field": "Subject", "operator": "contains", "value": "Min. 50% Off on Early Bird Deals" },
+          { "field": "DateReceived", "operator": "less_than_days", "value": 22 }
+        ],
+        "actions": [
+          { "type": "mark_as_read" },
+          { "type": "move", "destination": "IMPORTANT" }
+        ]
+    },
+    {
+      "description": "Interview Filter",
+      "predicate": "all",
+      "conditions": [
+        { "field": "From", "operator": "contains", "value": "tenmiles.com" },
+        { "field": "Subject", "operator": "contains", "value": "Interview" },
+        { "field": "DateReceived", "operator": "less_than_days", "value": 2 }
+      ],
+      "actions": [
+        { "type": "mark_as_read" },
+        { "type": "move", "destination": "YELLOW_STAR" }
+      ]
+    },
+    {
+      "description": "Unread Newsletter",
+      "predicate": "any",
+      "conditions": [
+        { "field": "From", "operator": "equals", "value": "newsletter@example.com" },
+        { "field": "Subject", "operator": "not_contains", "value": "Important" },
+        { "field": "DateReceived", "operator": "greater_than_months", "value": 2 }
+      ],
+      "actions": [
+        { "type": "mark_as_unread" }, 
+        { "type": "move", "destination": "Archive" }
+      ]
+    },
+    {
+      "description": "Old Messages Cleanup",
+      "predicate": "all",
+      "conditions": [
+        { "field": "From", "operator": "equals", "value": "newsletter@example.com" },
+        { "field": "Subject", "operator": "not_contains", "value": "Important" },
+        { "field": "DateReceived", "operator": "less_than_days", "value": 20 }
+      ],
+      "actions": [
+        { "type": "mark_as_unread" }, 
+        { "type": "move", "destination": "Archive" }
+      ]
     }
-   
   ]
   
   

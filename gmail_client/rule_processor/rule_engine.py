@@ -4,6 +4,7 @@ import logging
 from gmail_client.rule_processor.actions import apply_actions
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
+from gmail_client.email_repository import fetch_all_emails
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -101,14 +102,20 @@ def check_condition(email, condition):
         return False
 
 
-def process_rules(service, emails):
+def process_rules(service):
     """Process emails against rules and apply actions."""
+    # 5. Fetch from DB to verify persistence (optional)
+    stored_emails = fetch_all_emails()
+    if not stored_emails:
+        logger.info("ℹ️ No stored emails to process rules on.")
+        return
+    
     rules = load_rules()
     if not rules:
         logger.info("ℹ️ No rules found to apply.")
         return
 
-    for email in emails:
+    for email in stored_emails:
         for rule in rules:
             conditions = rule.get("conditions", [])
             predicate = rule.get("predicate", "all").lower()

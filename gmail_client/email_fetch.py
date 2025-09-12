@@ -7,9 +7,7 @@ from email.utils import parsedate_to_datetime
 
 def parse_headers(headers: List[Dict]) -> Dict[str, str]:
     """Convert Gmail headers list to a dictionary with lowercase keys."""
-    logging.info("parse_headers")
     return {header["name"].lower(): header["value"] for header in headers}
-
 
 def extract_received_at(date_str: Optional[str], message: Dict) -> Optional[str]:
     """
