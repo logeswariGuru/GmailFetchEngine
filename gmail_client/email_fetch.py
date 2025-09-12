@@ -3,6 +3,16 @@ import logging, time, random
 from googleapiclient.errors import HttpError
 from datetime import datetime
 from email.utils import parsedate_to_datetime
+from gmail_client.errors import (
+    EMAIL_PARSE_HEADER_FAILED,
+    EMAIL_PARSE_INTERNALDATE_FAILED,
+    EMAIL_FETCH_ERROR,
+    EMAIL_PROCESS_FAILED,
+    EMAIL_RATE_LIMITED,
+    EMAIL_GMAIL_API_ERROR,
+    EMAIL_UNEXPECTED_FETCH_ERROR,
+    EMAIL_MAX_RETRIES_EXCEEDED,
+)
 
 
 def parse_headers(headers: List[Dict]) -> Dict[str, str]:
@@ -19,14 +29,14 @@ def extract_received_at(date_str: Optional[str], message: Dict) -> Optional[str]
         try:
             received_at = parsedate_to_datetime(date_str)
         except Exception as e:
-            logging.warning(f"⚠️ Failed to parse header date: {date_str}, error: {e}")
+            logging.warning(EMAIL_PARSE_HEADER_FAILED, date_str, e)
 
     if not received_at:
         try:
             internal_ts = int(message.get("internalDate", 0)) / 1000
             received_at = datetime.utcfromtimestamp(internal_ts)
         except Exception as e:
-            logging.error(f"❌ Failed to parse internalDate: {e}")
+            logging.error(EMAIL_PARSE_INTERNALDATE_FAILED, e)
             received_at = None
 
     return received_at.isoformat() if received_at else None
@@ -40,7 +50,7 @@ def process_message_response(
 ) -> None:
     """Callback for handling each Gmail message in batch request."""
     if exception:
-        logging.error(f"❌ Error fetching message {request_id}: {exception}")
+        logging.error(EMAIL_FETCH_ERROR, request_id, exception)
         return
 
     try:
@@ -65,7 +75,7 @@ def process_message_response(
             "labels": labels,
         })
     except Exception as e:
-        logging.error(f"⚠️ Failed to process message: {e}")
+        logging.error(EMAIL_PROCESS_FAILED, e)
 
 
 def safe_execute(batch, retries: int = 5):
@@ -76,11 +86,11 @@ def safe_execute(batch, retries: int = 5):
         except HttpError as e:
             if e.resp.status == 429:  # rate limit exceeded
                 wait = (2 ** i) + random.random()
-                logging.warning(f"Rate limited (429). Retrying in {wait:.1f}s...")
+                logging.warning(EMAIL_RATE_LIMITED, f"{wait:.1f}s")
                 time.sleep(wait)
             else:
                 raise
-    raise RuntimeError("Max retries exceeded due to Gmail rate limits")
+    raise RuntimeError(EMAIL_MAX_RETRIES_EXCEEDED)
 
 
 def fetch_inbox_messages(
@@ -129,10 +139,10 @@ def fetch_inbox_messages(
         return emails, next_page_token
 
     except HttpError as e:
-        logging.error(f"Gmail API error: {e}")
+        logging.error(EMAIL_GMAIL_API_ERROR, e)
         return [], None
     except Exception as e:
-        logging.error(f"Unexpected error fetching emails: {e}")
+        logging.error(EMAIL_UNEXPECTED_FETCH_ERROR, e)
         return [], None
 
 

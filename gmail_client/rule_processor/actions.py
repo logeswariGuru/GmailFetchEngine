@@ -1,4 +1,9 @@
 import logging
+from gmail_client.errors import (
+    ACTIONS_NO_DESTINATION,
+    ACTIONS_UNSUPPORTED,
+    ACTIONS_APPLY_FAILED,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -44,7 +49,7 @@ def apply_actions(service, email, actions):
             elif atype == "move":
                 destination = action.get("destination")
                 if not destination:
-                    logger.warning("⚠️ No destination provided for move action.")
+                    logger.warning(ACTIONS_NO_DESTINATION)
                     continue
 
                 # Always attempt to add the destination label and remove INBOX.
@@ -52,7 +57,7 @@ def apply_actions(service, email, actions):
                 logger.info("📂 Moved email %s to %s (requested)", email_id, destination)
 
             else:
-                logger.warning("⚠️ Unsupported action type: %s", atype)
+                logger.warning(ACTIONS_UNSUPPORTED, atype)
 
         except Exception as e:
-            logger.error("❌ Failed to apply action %s on email %s: %s", action, email_id, e)
+            logger.error(ACTIONS_APPLY_FAILED, action, email_id, e)

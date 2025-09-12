@@ -50,7 +50,7 @@
       ],
       "actions": [
         { "type": "mark_as_unread" }, 
-        { "type": "move", "destination": "Archive" }
+        { "type": "move", "destination": "YELLOW_STAR" }
       ]
     },
     {

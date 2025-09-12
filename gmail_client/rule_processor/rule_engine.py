@@ -2,6 +2,17 @@ import json
 import os
 import logging
 from gmail_client.rule_processor.actions import apply_actions
+from gmail_client.errors import (
+    RULES_FILE_NOT_FOUND,
+    RULES_PARSE_FAILED,
+    RULE_PARSE_DATE_FAILED,
+    RULE_INVALID_CONDITION,
+    RULE_UNSUPPORTED_DATE_OPERATOR,
+    RULE_UNSUPPORTED_OPERATOR,
+    RULE_EVAL_ERROR,
+    RULE_UNSUPPORTED_PREDICATE,
+    RULE_PROCESS_FAILED,
+)
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
 from gmail_client.email_repository import fetch_all_emails
@@ -18,10 +29,10 @@ def load_rules():
         with open(RULES_FILE, "r") as f:
             return json.load(f)
     except FileNotFoundError:
-        logger.error("❌ Rules file not found: %s", RULES_FILE)
+        logger.error(RULES_FILE_NOT_FOUND, RULES_FILE)
         return []
     except json.JSONDecodeError as e:
-        logger.error("❌ Failed to parse rules.json: %s", e)
+        logger.error(RULES_PARSE_FAILED, e)
         return []
 
 
@@ -40,7 +51,7 @@ def parse_date_safe(received_at):
         # Then try Gmail RFC2822 header format
         return parsedate_to_datetime(received_at)
     except Exception:
-        logger.error("❌ Could not parse date: %s", received_at)
+        logger.error(RULE_PARSE_DATE_FAILED, received_at)
         return None
 
 
@@ -52,7 +63,7 @@ def check_condition(email, condition):
         value = condition.get("value")
 
         if not field or not operator:
-            logger.warning("⚠️ Invalid condition: %s", condition)
+            logger.warning(RULE_INVALID_CONDITION, condition)
             return False
 
         # Extract field value
@@ -80,7 +91,7 @@ def check_condition(email, condition):
             elif operator == "greater_than_months":
                 return (now - email_date).days > int(value) * 30
             else:
-                logger.warning("⚠️ Unsupported date operator: %s", operator)
+                logger.warning(RULE_UNSUPPORTED_DATE_OPERATOR, operator)
                 return False
 
         # Handle string operators
@@ -94,11 +105,11 @@ def check_condition(email, condition):
             elif operator == "not_equals":
                 return email_val.lower() != value.lower()
 
-        logger.warning("⚠️ Unsupported operator: %s", operator)
+        logger.warning(RULE_UNSUPPORTED_OPERATOR, operator)
         return False
 
     except Exception as e:
-        logger.error("❌ Error evaluating condition %s: %s", condition, e)
+        logger.error(RULE_EVAL_ERROR, condition, e)
         return False
 
 
@@ -125,11 +136,11 @@ def process_rules(service):
                 elif predicate == "any":
                     match = any(check_condition(email, c) for c in conditions)
                 else:
-                    logger.warning("⚠️ Unsupported rule predicate: %s", predicate)
+                    logger.warning(RULE_UNSUPPORTED_PREDICATE, predicate)
                     match = False
                 if match:
                     logger.info("✅ Rule matched: %s", rule.get("description", "Unnamed"))
                     logger.info(f"apply_action yet to trigger")
                     apply_actions(service, email, rule.get("actions", []))
             except Exception as e:
-                logger.error("❌ Failed to process rule %s: %s", rule, e)
+                logger.error(RULE_PROCESS_FAILED, rule, e)
