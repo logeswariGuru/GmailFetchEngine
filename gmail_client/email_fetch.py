@@ -85,11 +85,11 @@ def safe_execute(batch, retries: int = 5):
             return batch.execute()
         except HttpError as e:
             if e.resp.status == 429:  # rate limit exceeded
-                wait = (2 ** i) + random.random()
+                wait = (2 ** i) + random.random() # to avoids lots of retries
                 logging.warning(EMAIL_RATE_LIMITED, f"{wait:.1f}s")
                 time.sleep(wait)
             else:
-                raise
+                raise # Pass it back to the caller
     raise RuntimeError(EMAIL_MAX_RETRIES_EXCEEDED)
 
 
@@ -124,7 +124,7 @@ def fetch_inbox_messages(
         # Process in smaller chunks to avoid hitting Gmail concurrency limits
         for i in range(0, len(messages), batch_limit):
             chunk = messages[i:i + batch_limit]
-            batch = service.new_batch_http_request()
+            batch = service.new_batch_http_request() # sending multiple requests in a single HTTP request
 
             for msg in chunk:
                 batch.add(

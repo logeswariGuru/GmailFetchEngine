@@ -29,8 +29,8 @@ def apply_actions(service, email, actions):
     logger.info(f"apply_actions → {email.get('id')}")
 
     email_id = email.get("id")
-    is_read = email.get("is_read", 0)      # default to unread (0)
-    labels = email.get("labels", [])        # default to empty list
+    # is_read = email.get("is_read", 0)      # default to unread (0)
+    # labels = email.get("labels", [])        # default to empty list
 
     for action in actions:
         try:

@@ -49,10 +49,7 @@ def main(fetch_all: bool = True, batch_size: int = 50):
         else:
             logging.info("No emails retrieved from Gmail.")
 
-        # # 5. Fetch from DB to verify persistence (optional)
-        # stored_emails = fetch_all_emails()
-
-        # 6. Process rules on stored emails
+        # 5. Process rules on stored emails
         process_rules(service)
 
     except Exception as e:

@@ -18,7 +18,7 @@ def init_db():
                 subject TEXT,
                 snippet TEXT,
                 received_at DATETIME,
-                is_read INTEGER DEFAULT 0,
+                is_read INTEGER,
                 labels TEXT
             )
         """)
